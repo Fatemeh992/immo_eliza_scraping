@@ -1,1 +1,20 @@
 
+from selenium import webdriver
+import time
+
+url = 'https://www.immoweb.be/en'
+#open an instance of chrome
+driver = webdriver.Chrome()
+driver.get(url)
+
+#get cookies and save as a variable
+cookies = driver.get_cookies()
+
+# Add cookies to the driver
+for cookie in cookies:
+    driver.add_cookie(cookie)
+    time.sleep(2)
+driver.refresh() 
+
+
+
