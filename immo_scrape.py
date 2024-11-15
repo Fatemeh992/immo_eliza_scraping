@@ -34,22 +34,58 @@ def get_property_data(house_index, url):
             parsed_data["property_type"] = get_in(data, ["property", "type"])
             parsed_data["property_subtype"] = get_in(data, ["property", "subtype"])
             parsed_data["locality"] = get_in(data, ["property", "location", "locality"])
-            parsed_data["kitchen"] = get_in(data, ["property", "kitchen", "type"])
             parsed_data["facades"] = get_in(data, ["property", "building", "facadeCount"])
             parsed_data["price"] = get_in(data, ["transaction", "sale", "price"])
-            parsed_data["furnished"] = get_in(data, ["transaction", "sale", "isFurnished"])
-            parsed_data["terrace"] = get_in(data, ["property", "hasTerrace"])
-            parsed_data["terraceSurface"] = get_in(data, ["property", "terraceSurface"])
-            parsed_data["fireplace"] = get_in(data, ["property", "fireplaceExists"])
-            parsed_data["fireplaceCount"] = get_in(data, ["property", "fireplaceCount"])
-            parsed_data["buildingState"] = get_in(data, ["property", "building", "condition"])
-            parsed_data["garden"] = get_in(data, ["property", "hasGarden"])
-            parsed_data["gardenSurface"] = get_in(data, ["property", "gardenSurface"])
-            parsed_data["pool"] = get_in(data, ["property", "hasSwimmingPool"])
             parsed_data["landSurface"] = get_in(data, ["property", "land", "surface"])
             parsed_data["livingArea"] = get_in(data, ["property", "netHabitableSurface"])
             parsed_data["surfaceOfThePlot"] = get_in(data, ["property", "land", "surface"])
             parsed_data["typeOfSale"] = getTypeOfSale(data)
+            parsed_data["buildingState"] = get_in(data, ["property", "building", "condition"])
+
+            pool = get_in(data, ["property", "hasSwimmingPool"])
+            if pool:
+                parsed_data["pool"] = 1
+            else:
+                parsed_data["pool"] = 0
+
+            kitchen = get_in(data, ["property", "kitchen", "type"])
+            if kitchen:
+                parsed_data["kitchen"] = 1
+            else:
+                parsed_data["kitchen"] = 0
+
+            furnished = get_in(data, ["transaction", "sale", "isFurnished"])
+            if furnished:
+                parsed_data["furnished"] = 1
+            else :
+                parsed_data["furnished"] = 0
+
+            terrace = get_in(data, ["property", "hasTerrace"])
+            if terrace:
+                parsed_data["terrace"] = 1
+                parsed_data["terraceSurface"] = get_in(data, ["property", "terraceSurface"])
+            else:
+                parsed_data["terrace"] = 0 
+                parsed_data["terraceSurface"] = 0
+
+            fireplace = get_in(data, ["property", "fireplaceExists"])
+            if fireplace:
+                parsed_data["fireplace"] = 1
+                parsed_data["fireplaceCount"] = get_in(data, ["property", "fireplaceCount"])
+            else:
+                parsed_data["fireplace"] = 0 
+                parsed_data["fireplaceCount"] = 0
+
+            garden = get_in(data, ["property", "hasGarden"])
+            if garden:
+                parsed_data["garden"] = 1
+                parsed_data["gardenSurface"] = get_in(data, ["property", "gardenSurface"])
+            else:
+                parsed_data["garden"] = 0
+                parsed_data["gardenSurface"] = 0
+            
+
+
     return house_index, parsed_data  
 
 
