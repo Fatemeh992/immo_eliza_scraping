@@ -26,7 +26,7 @@ Make sure you have the following:
 This script will:
 1. Retrieve a list of properties from the API.
 2. Extract poperties' information from immoweb for each property.
-3. Save the output in a CSV file.
+3. Save the output in a CSV file which could be used for related analysis.
 
 
 # Structure
