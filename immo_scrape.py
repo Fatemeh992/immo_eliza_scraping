@@ -89,7 +89,7 @@ def get_property_data(house_index, url):
     return house_index, parsed_data  
 
 
-with open("property_links.csv", "r") as links:
+with open("property_links_15Nov.csv", "r") as links:
     urls = [(index, link.strip()) for index, link in enumerate(links)]
 
 
