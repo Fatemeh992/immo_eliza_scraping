@@ -38,7 +38,8 @@ The project has the following core components:
 
 # Contributors 
 This proects is done by:
-[Tumi](https://github.com/2moonyo)
-[karthika](https://github.com/karthika-elimireddy)
-[Fatemeh](https://github.com/Fatemeh992)
+1. [Tumi](https://github.com/2moonyo)
+2. [karthika](https://github.com/karthika-elimireddy)
+3. [Fatemeh](https://github.com/Fatemeh992)
+
 
