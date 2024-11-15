@@ -9,7 +9,7 @@ property_links = []
 
 
 def fetch_links(page):
-    url = f'https://www.immoweb.be/en/search/house-and-apartment/for-sale?countries=BE&isALifeAnnuitySale=false&page={page}&orderBy=relevance'
+    url = f'https://www.immoweb.be/en/search/house-and-apartment/for-sale?countries=BE&isNewlyBuilt=false&isALifeAnnuitySale=false&isUnderOption=false&maxConstructionYear=2015&page={page}&orderBy=relevance'
     start_time = perf_counter()
     response = requests.get(url, headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"})
     if response.status_code == 200:
@@ -39,7 +39,7 @@ program_duration = perf_counter() - program_start
 print(f"\nTotal time taken for program: {program_duration:.4f} seconds.")
 print(property_links)
 
-with open('property_links.csv', 'w') as csvfile:
+with open('property_links_15Nov.csv', 'w') as csvfile:
     writer = csv.writer(csvfile)
     for url in property_links:
         writer.writerow([url])
