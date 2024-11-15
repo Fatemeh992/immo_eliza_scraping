@@ -1,3 +1,6 @@
+#TEST SCRAPE
+
+
 import requests
 from bs4 import BeautifulSoup
 import json
@@ -30,6 +33,7 @@ def get_property_data(house_index, url):
         if len(s) > 0 and s[0].has_attr(":classified"):
             data = json.loads(s[0].attrs[":classified"])
 
+            parsed_data["url"] = url
             parsed_data["bedrooms"] = get_in(data, ["property", "bedroomCount"])
             parsed_data["property_type"] = get_in(data, ["property", "type"])
             parsed_data["property_subtype"] = get_in(data, ["property", "subtype"])
@@ -50,26 +54,28 @@ def get_property_data(house_index, url):
             parsed_data["livingArea"] = get_in(data, ["property", "netHabitableSurface"])
             parsed_data["surfaceOfThePlot"] = get_in(data, ["property", "land", "surface"])
             parsed_data["typeOfSale"] = getTypeOfSale(data)
-    return house_index, parsed_data  
+    return house_index,parsed_data  
 
 
-with open("property_links.csv", "r") as links:
+with open("property_links_15Nov!4H00.csv", "r") as links:
     urls = [(index, link.strip()) for index, link in enumerate(links)]
+    
 
 
 properties_data = []
 with ThreadPoolExecutor(max_workers=8) as executor:
     futures = [executor.submit(get_property_data, house_index, url) for house_index, url in urls]
     for future in as_completed(futures):
-        house_index, parsed_data = future.result()  
+        house_index ,parsed_data = future.result()  
         flattened_data = {"house_index": house_index}
         flattened_data.update(parsed_data)
         properties_data.append(flattened_data)
 
 
-fieldnames = properties_data[0].keys()  
 
-with open("all_properties_output.csv", "w", newline="") as csvfile:
+fieldnames =properties_data[0].keys()  
+
+with open("all_properties_output_14H00.csv", "w", newline="") as csvfile:
     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
     writer.writeheader()
     for property_data in properties_data:

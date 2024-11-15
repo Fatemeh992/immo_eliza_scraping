@@ -39,7 +39,7 @@ program_duration = perf_counter() - program_start
 print(f"\nTotal time taken for program: {program_duration:.4f} seconds.")
 print(property_links)
 
-with open('property_links_15Nov.csv', 'w') as csvfile:
+with open('property_links_15Nov!4H00.csv', 'w') as csvfile:
     writer = csv.writer(csvfile)
     for url in property_links:
         writer.writerow([url])
