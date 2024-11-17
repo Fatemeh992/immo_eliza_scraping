@@ -8,10 +8,13 @@ import json
 import csv
 from typing import Any
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import os
+import pandas as pd
 
 
-def fetch_links(page,property_links):
-    url = f'https://www.immoweb.be/en/search/house/for-sale?countries=BE&isALifeAnnuitySale=false&isAnInvestmentProperty=false&isAPublicSale=false&isNewlyBuilt=false&maxConstructionYear=1975&minConstructionYear=1930&buildingConditions=TO_RESTORE,TO_RENOVATE,TO_BE_DONE_UP,JUST_RENOVATED&page={page}&orderBy=relevance'
+def fetch_links(url,page,property_links):
+
+    url=f"{url}&page={page}"
     start_time = perf_counter()
     response = requests.get(url, headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"})
     if response.status_code == 200:
@@ -22,9 +25,20 @@ def fetch_links(page,property_links):
         print(f"Page {page} fetched in {duration:.4f} seconds.")
     else:
         print(f"Error on page {page}")
+    
+def fetch_multiple_pages(base_url, start_page, end_page,property_links):
+    # Create a list of page numbers to iterate over
+    pages = list(range(start_page, end_page))
+    
+    # Use ThreadPoolExecutor to fetch all pages concurrently
+    with ThreadPoolExecutor(max_workers=10) as executor:  # Adjust max_workers based on your needs
+        # Submit tasks to fetch data for each page from the base URL
+        executor.map(lambda page_number: fetch_links(base_url, page_number,property_links), pages)
+    
 
-def write_links_csv():
-    with open('property_links_15Nov!4H00.csv', 'a') as csvfile:
+def write_links_csv(file_path,property_links):
+    print("In write csv")
+    with open(file_path, 'w') as csvfile:
         writer = csv.writer(csvfile)
         for url in property_links:
             writer.writerow([url])
@@ -54,8 +68,6 @@ def get_property_data(house_index, url):
         s = soup.select('iw-load-advertisements')
         if len(s) > 0 and s[0].has_attr(":classified"):
             data = json.loads(s[0].attrs[":classified"])
-
-            #parsed_data["url"] = url
             parsed_data["bedrooms"] = get_in(data, ["property", "bedroomCount"])
             parsed_data["property_type"] = get_in(data, ["property", "type"])
             parsed_data["property_subtype"] = get_in(data, ["property", "subtype"])
@@ -126,8 +138,8 @@ def get_property_data(house_index, url):
     return house_index,parsed_data  
     
 
-def save_property_data_2_csv(fieldnames, properties_data):
-    with open("all_properties_output_15_30.csv", "w", newline="") as csvfile:
+def save_property_data_2_csv(file_path,fieldnames, properties_data):
+    with open(file_path, "w", newline="") as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
         for property_data in properties_data:
@@ -135,23 +147,48 @@ def save_property_data_2_csv(fieldnames, properties_data):
 
     print("CSV file created successfully.")
 
+def clean_save_dataset(file_path):
+    df= pd.read_csv(file_path)
+    #drops duplicates
+    df.drop_duplicates(subset=['postal_code','street','number','box'], inplace=True)
+    #drops the empty rows if there are any.
+    df.dropna(how='all',inplace=True)
+    #Changing the dtype to category, better for analysis
+    df['property_type']=df['property_type'].astype('category')
+    df['property_subtype']=df['property_subtype'].astype('category')
+    df['locality']=df['locality'].astype('category')
+    df['buildingState']=df['buildingState'].astype('category')
+    #replace missing values with a None
+    df.map(lambda x: None if pd.isna(x) else x)
+    df.to_csv("utils/cleaned_dataset.csv",index=False)
+
+ 
+
+
 def main():
     program_start = perf_counter()
-
     property_links = []
     threads = []
-    for page in range(1, 334):
-        thread = Thread(target=fetch_links, args=(page,property_links))
-        threads.append(thread)
-        thread.start()
+    
+    url1=f"https://www.immoweb.be/en/search/house-and-apartment/for-sale?countries=BE&isALifeAnnuitySale=false&isNewlyBuilt=false&minConstructionYear=1930&maxConstructionYear=1975&orderBy=relevance"
+    url2=f"https://www.immoweb.be/en/search/house-and-apartment/for-sale?countries=BE&isALifeAnnuitySale=false&isNewlyBuilt=false&minConstructionYear=1976&orderBy=relevance"
+    urls=[url1,url2]
+    for url in urls:
+        results = fetch_multiple_pages(url, 1, 334,property_links)  # Fetch pages 1 to 334
+        """for page in range(1, 334):
+            thread = Thread(target=fetch_links, args=(url,page,property_links))
+            threads.append(thread)
+            thread.start()
     for thread in threads:
-        thread.join()
+        thread.join()"""
     program_duration = perf_counter() - program_start
     print(f"\nTotal time taken for program: {program_duration:.4f} seconds.")
-    write_links_csv(property_links)
+    print(len(property_links))
+    file_path = 'utils/property_links.csv'
+    write_links_csv(file_path,property_links)
     
     time.sleep(30)
-    with open("property_links_15Nov!4H00.csv", "r") as links:
+    with open("utils/property_links.csv", "r") as links:
         urls = [(index, link.strip()) for index, link in enumerate(links)]    
 
     properties_data = []
@@ -163,6 +200,11 @@ def main():
             flattened_data.update(parsed_data)
             properties_data.append(flattened_data)
     fieldnames =properties_data[0].keys()
-    save_property_data_2_csv(fieldnames, properties_data)
+    output_file_path="utils/all_properties_output.csv"
+    save_property_data_2_csv(output_file_path,fieldnames, properties_data)
+    clean_save_dataset(output_file_path)
+    
 
-main()
+
+if __name__ == "__main__":
+    main()
