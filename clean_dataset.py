@@ -13,4 +13,9 @@ df['locality']=df['locality'].astype('category')
 df['buildingState']=df['buildingState'].astype('category')
 #replace missing values with a None
 df.map(lambda x: None if pd.isna(x) else x)
-df.to_csv("utils/cleaned_dataset.csv",index=False)
+# delete the property with 200 bedroom
+df.drop([18860], axis=0, inplace=True)
+df.set_index('house_index', drop=True, inplace=True)
+df.sort_index(inplace=True)
+df.to_csv("utils/cleaned_dataset.csv")
+#df.set_index('house_index', drop=True, inplace=True)

@@ -160,7 +160,11 @@ def clean_save_dataset(file_path):
     df['buildingState']=df['buildingState'].astype('category')
     #replace missing values with a None
     df.map(lambda x: None if pd.isna(x) else x)
-    df.to_csv("utils/cleaned_dataset.csv",index=False)
+    # delete the property with 200 bedroom
+    df.drop([18860], axis=0, inplace=True)
+    df.set_index('house_index', drop=True, inplace=True)
+    df.sort_index(inplace=True) 
+    df.to_csv("utils/cleaned_dataset.csv",index="house_index")
 
  
 
@@ -192,7 +196,7 @@ def main():
         urls = [(index, link.strip()) for index, link in enumerate(links)]    
 
     properties_data = []
-    with ThreadPoolExecutor(max_workers=8) as executor:
+    with ThreadPoolExecutor(max_workers=10) as executor:
         futures = [executor.submit(get_property_data, house_index, url) for house_index, url in urls]
         for future in as_completed(futures):
             house_index ,parsed_data = future.result()  
