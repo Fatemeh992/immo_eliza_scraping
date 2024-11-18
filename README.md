@@ -18,7 +18,7 @@ Make sure you have the following:
 1. Python 3.x installed.
 2. pip for managing Python packages.
 3. for the required libraries please refer to 
-    requirements.txt --- install using the command pip install -r requirements.txt
+    requirements.txt --- install using the command pip install -r utils/requirements.txt
 
 
 # Usage
