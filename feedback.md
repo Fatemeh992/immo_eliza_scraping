@@ -2,6 +2,7 @@
   - In usage please explain how to execute the script
   - create a data folder so you dont put data in utils and you don't mix csv and code
   - I see everyone used git but you only created and merged 1 branch, please try to create a branch by feature for the next projects so you avoid conflicts and you separate the tasks properly
+  - Please delete remaining and useless branches when the project is finished to clean the repo
   - I don't have a clear view on who did what
   - no typing and no docstring :cry:
   - functions names format inconsistent (getTypeOfSale, get_property_data, save_property_data_2_csv)
