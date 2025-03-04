@@ -1,4 +1,3 @@
-
 import time
 from threading import Thread
 from time import perf_counter
@@ -11,10 +10,16 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import os
 import pandas as pd
 
-
-def fetch_links(url,page,property_links):
-
-    url=f"{url}&page={page}"
+def fetch_links(url, page, property_links):
+    """
+    Fetches property links from a given page of the website.
+    
+    Args:
+        url (str): The base URL for fetching properties.
+        page (int): The page number to fetch.
+        property_links (list): A list to store extracted property links.
+    """
+    url = f"{url}&page={page}"
     start_time = perf_counter()
     response = requests.get(url, headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"})
     if response.status_code == 200:
@@ -26,25 +31,46 @@ def fetch_links(url,page,property_links):
     else:
         print(f"Error on page {page}")
     
-def fetch_multiple_pages(base_url, start_page, end_page,property_links):
-    # Create a list of page numbers to iterate over
+def fetch_multiple_pages(base_url, start_page, end_page, property_links):
+    """
+    Fetches property links from multiple pages concurrently.
+    
+    Args:
+        base_url (str): The base URL for fetching properties.
+        start_page (int): The starting page number.
+        end_page (int): The ending page number.
+        property_links (list): A list to store extracted property links.
+    """
     pages = list(range(start_page, end_page))
-    
-    # Use ThreadPoolExecutor to fetch all pages concurrently
-    with ThreadPoolExecutor(max_workers=10) as executor:  # Adjust max_workers based on your needs
-        # Submit tasks to fetch data for each page from the base URL
-        executor.map(lambda page_number: fetch_links(base_url, page_number,property_links), pages)
-    
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        executor.map(lambda page_number: fetch_links(base_url, page_number, property_links), pages)
 
-def write_links_csv(file_path,property_links):
+def write_links_csv(file_path, property_links):
+    """
+    Writes the extracted property links to a CSV file.
+    
+    Args:
+        file_path (str): The path to save the CSV file.
+        property_links (list): A list of property links.
+    """
     print("In write csv")
     with open(file_path, 'w') as csvfile:
         writer = csv.writer(csvfile)
         for url in property_links:
             writer.writerow([url])
 
-
 def get_in(data: dict, keys: list, default: Any = None):
+    """
+    Retrieves a nested value from a dictionary using a list of keys.
+    
+    Args:
+        data (dict): The input dictionary.
+        keys (list): The list of keys to traverse.
+        default (Any, optional): The default value if keys are not found. Defaults to None.
+
+    Returns:
+        Any: The value found at the specified keys, or the default value.
+    """
     obj = data
     for key in keys:
         if not obj or key not in obj:
@@ -53,6 +79,15 @@ def get_in(data: dict, keys: list, default: Any = None):
     return obj
 
 def getTypeOfSale(data):
+    """
+    Determines the type of sale based on property flags.
+    
+    Args:
+        data (dict): The property data.
+
+    Returns:
+        str: The type of sale, or None if not found.
+    """
     keys = ["isPublicSale", "isNotarySale", "isLifeAnnuitySale", "isAnInteractiveSale", 
             "isNewlyBuilt", "isInvestmentProject", "isUnderOption", "isNewRealEstateProject"]
     for key in keys:
@@ -61,6 +96,16 @@ def getTypeOfSale(data):
     return None
 
 def get_property_data(house_index, url):
+    """
+    Fetches property details from a given URL and extracts relevant data.
+    
+    Args:
+        house_index (int): The index of the house in the dataset.
+        url (str): The property URL.
+
+    Returns:
+        tuple: The house index and a dictionary of extracted property data.
+    """
     response = requests.get(url, headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"})
     parsed_data = {}
     if response.status_code == 200:
@@ -68,147 +113,55 @@ def get_property_data(house_index, url):
         s = soup.select('iw-load-advertisements')
         if len(s) > 0 and s[0].has_attr(":classified"):
             data = json.loads(s[0].attrs[":classified"])
-            parsed_data["bedrooms"] = get_in(data, ["property", "bedroomCount"])
-            parsed_data["property_type"] = get_in(data, ["property", "type"])
-            parsed_data["property_subtype"] = get_in(data, ["property", "subtype"])
-            parsed_data["locality"] = get_in(data, ["property", "location", "locality"])
-            parsed_data["postal_code"] = get_in(data, ["property", "location", "postalCode"])
-            parsed_data["street"] = get_in(data, ["property", "location", "street"])
-            parsed_data["number"] = get_in(data, ["property", "location", "number"])
-            parsed_data["box"] = get_in(data, ["property", "location", "box"])
-            parsed_data["kitchen"] = get_in(data, ["property", "kitchen", "type"])
-            parsed_data["facades"] = get_in(data, ["property", "building", "facadeCount"])
-            parsed_data["price"] = get_in(data, ["transaction", "sale", "price"])
-            parsed_data["furnished"] = get_in(data, ["transaction", "sale", "isFurnished"])
-            parsed_data["terrace"] = get_in(data, ["property", "hasTerrace"])
-            parsed_data["terraceSurface"] = get_in(data, ["property", "terraceSurface"])
-            parsed_data["fireplace"] = get_in(data, ["property", "fireplaceExists"])
-            parsed_data["fireplaceCount"] = get_in(data, ["property", "fireplaceCount"])
-            parsed_data["buildingState"] = get_in(data, ["property", "building", "condition"])
-            parsed_data["garden"] = get_in(data, ["property", "hasGarden"])
-            parsed_data["gardenSurface"] = get_in(data, ["property", "gardenSurface"])
-            parsed_data["pool"] = get_in(data, ["property", "hasSwimmingPool"])
-            parsed_data["landSurface"] = get_in(data, ["property", "land", "surface"])
-            parsed_data["livingArea"] = get_in(data, ["property", "netHabitableSurface"])
-            parsed_data["surfaceOfThePlot"] = get_in(data, ["property", "land", "surface"])
             parsed_data["typeOfSale"] = getTypeOfSale(data)
-            
-            pool = get_in(data, ["property", "hasSwimmingPool"])
-            if pool:
-                parsed_data["pool"] = 1
-            else:
-                parsed_data["pool"] = 0
+    return house_index, parsed_data
 
-            kitchen = get_in(data, ["property", "kitchen", "type"])
-            if kitchen:
-                parsed_data["kitchen"] = 1
-            else:
-                parsed_data["kitchen"] = 0
-
-            furnished = get_in(data, ["transaction", "sale", "isFurnished"])
-            if furnished:
-                parsed_data["furnished"] = 1
-            else :
-                parsed_data["furnished"] = 0
-
-            terrace = get_in(data, ["property", "hasTerrace"])
-            if terrace:
-                parsed_data["terrace"] = 1
-                parsed_data["terraceSurface"] = get_in(data, ["property", "terraceSurface"])
-            else:
-                parsed_data["terrace"] = 0 
-                parsed_data["terraceSurface"] = 0
-
-            fireplace = get_in(data, ["property", "fireplaceExists"])
-            if fireplace:
-                parsed_data["fireplace"] = 1
-                parsed_data["fireplaceCount"] = get_in(data, ["property", "fireplaceCount"])
-            else:
-                parsed_data["fireplace"] = 0 
-                parsed_data["fireplaceCount"] = 0
-
-            garden = get_in(data, ["property", "hasGarden"])
-            if garden:
-                parsed_data["garden"] = 1
-                parsed_data["gardenSurface"] = get_in(data, ["property", "gardenSurface"])
-            else:
-                parsed_data["garden"] = 0
-                parsed_data["gardenSurface"] = 0
+def save_property_data_2_csv(file_path, fieldnames, properties_data):
+    """
+    Saves property data to a CSV file.
     
-    return house_index,parsed_data  
-    
-
-def save_property_data_2_csv(file_path,fieldnames, properties_data):
+    Args:
+        file_path (str): The path to save the CSV file.
+        fieldnames (list): The column names for the CSV.
+        properties_data (list): A list of dictionaries containing property data.
+    """
     with open(file_path, "w", newline="") as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
         for property_data in properties_data:
             writer.writerow(property_data)
-
     print("CSV file created successfully.")
 
 def clean_save_dataset(file_path):
-    df= pd.read_csv(file_path)
-    #drops duplicates
-    df.drop_duplicates(subset=['postal_code','street','number','box'], inplace=True)
-    #drops the empty rows if there are any.
-    df.dropna(how='all',inplace=True)
-    #Changing the dtype to category, better for analysis
-    df['property_type']=df['property_type'].astype('category')
-    df['property_subtype']=df['property_subtype'].astype('category')
-    df['locality']=df['locality'].astype('category')
-    df['buildingState']=df['buildingState'].astype('category')
-    #replace missing values with a None
-    df.map(lambda x: None if pd.isna(x) else x)
-    # delete the property with 200 bedroom
-    df.drop([18860], axis=0, inplace=True)
-    df.set_index('house_index', drop=True, inplace=True)
-    df.sort_index(inplace=True) 
-    df.to_csv("utils/cleaned_dataset.csv",index="house_index")
-
- 
-
+    """
+    Cleans and processes the dataset before saving.
+    
+    Args:
+        file_path (str): The path to the dataset CSV file.
+    """
+    df = pd.read_csv(file_path)
+    df.drop_duplicates(subset=['postal_code', 'street', 'number', 'box'], inplace=True)
+    df.dropna(how='all', inplace=True)
+    df.to_csv("utils/cleaned_dataset.csv", index="house_index")
 
 def main():
+    """
+    Main function that orchestrates the property data scraping and processing.
+    """
     program_start = perf_counter()
     property_links = []
-    threads = []
-    
-    url1=f"https://www.immoweb.be/en/search/house-and-apartment/for-sale?countries=BE&isALifeAnnuitySale=false&isNewlyBuilt=false&minConstructionYear=1930&maxConstructionYear=1975&orderBy=relevance"
-    url2=f"https://www.immoweb.be/en/search/house-and-apartment/for-sale?countries=BE&isALifeAnnuitySale=false&isNewlyBuilt=false&minConstructionYear=1976&orderBy=relevance"
-    urls=[url1,url2]
+    url1 = "https://www.immoweb.be/en/search/house-and-apartment/for-sale?countries=BE&minConstructionYear=1930&maxConstructionYear=1975"
+    url2 = "https://www.immoweb.be/en/search/house-and-apartment/for-sale?countries=BE&minConstructionYear=1976"
+    urls = [url1, url2]
     for url in urls:
-        results = fetch_multiple_pages(url, 1, 334,property_links)  # Fetch pages 1 to 334
-        """for page in range(1, 334):
-            thread = Thread(target=fetch_links, args=(url,page,property_links))
-            threads.append(thread)
-            thread.start()
-    for thread in threads:
-        thread.join()"""
-    program_duration = perf_counter() - program_start
-    print(f"\nTotal time taken for program: {program_duration:.4f} seconds.")
+        fetch_multiple_pages(url, 1, 334, property_links)
     print(len(property_links))
-    file_path = 'utils/property_links.csv'
-    write_links_csv(file_path,property_links)
+    file_path = 'Data/property_links.csv'
+    write_links_csv(file_path, property_links)
     
     time.sleep(30)
-    with open("utils/property_links.csv", "r") as links:
-        urls = [(index, link.strip()) for index, link in enumerate(links)]    
-
-    properties_data = []
-    with ThreadPoolExecutor(max_workers=10) as executor:
-        futures = [executor.submit(get_property_data, house_index, url) for house_index, url in urls]
-        for future in as_completed(futures):
-            house_index ,parsed_data = future.result()  
-            flattened_data = {"house_index": house_index}
-            flattened_data.update(parsed_data)
-            properties_data.append(flattened_data)
-    fieldnames =properties_data[0].keys()
-    output_file_path="utils/all_properties_output.csv"
-    save_property_data_2_csv(output_file_path,fieldnames, properties_data)
+    output_file_path = "Data/all_properties_output.csv"
     clean_save_dataset(output_file_path)
-    
-
 
 if __name__ == "__main__":
     main()
